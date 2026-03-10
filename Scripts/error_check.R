@@ -14,14 +14,14 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
   print("CHECKING VESSEL AND CRUISE...")
   
   # 1) Does cruise number match 202401?"
-    if(FALSE %in% unique(specimen_table$CRUISE == 202301)){
+    if(FALSE %in% unique(specimen_table$CRUISE == 202401)){
       print("ERROR: wrong cruise number")
     }
   
   
   # "2) Does the vessel # match the vessels utilized in the survey?"
     if(method == "POT"){
-      if(FALSE %in% (unique(specimen_table$VESSEL) %in% c("Arctic Lady", "Seabrooke")) == TRUE){
+      if(FALSE %in% (unique(specimen_table$VESSEL) %in% c("Marahute", "Provider")) == TRUE){
         print("ERROR: vessel numbers entered do not match survey vessels")
       }
     }
@@ -34,10 +34,10 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
     
     print("Inventory of catch by cruise and vessel")
     invent1 <- specimen_table %>%
-      dplyr::group_by(VESSEL, CRUISE) %>%
-      dplyr::reframe(COUNT = sum(SAMPLING_FACTOR),
-                     N = n()) %>%
-      as.data.frame()
+               group_by(VESSEL, CRUISE) %>%
+               reframe(COUNT = sum(SAMPLING_FACTOR),
+                       N = n()) %>%
+               as.data.frame()
     print(invent1)
   
   
@@ -58,10 +58,10 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
   
     print("Inventory of catch by cruise, vessel, species code, and sex")
     invent2 <- specimen_table %>%
-      dplyr::group_by(VESSEL, CRUISE, SPECIES_CODE, SEX) %>%
-      dplyr::reframe(COUNT = sum(SAMPLING_FACTOR), 
-                     N = n()) %>%
-      as.data.frame()
+               group_by(VESSEL, CRUISE, SPECIES_CODE, SEX) %>%
+               reframe(COUNT = sum(SAMPLING_FACTOR), 
+                       N = n()) %>%
+               as.data.frame()
     print(invent2)
   
   
@@ -127,19 +127,19 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
   
     print("Inventory of shell condition")
     invent3 <- specimen_table %>%
-      dplyr::group_by(SPECIES_CODE, SEX, SHELL_CONDITION) %>%
-      dplyr::reframe(COUNT = sum(SAMPLING_FACTOR),
-                     N = n()) %>%
-      as.data.frame()
+               group_by(SPECIES_CODE, SEX, SHELL_CONDITION) %>%
+               reframe(COUNT = sum(SAMPLING_FACTOR),
+                       N = n()) %>%
+               as.data.frame()
     print(invent3)
     
     print("Inventory of female shell condition and egg codes")
     invent4 <- specimen_table %>%
-      dplyr::filter(SEX == 2) %>%
-      dplyr::group_by(SPECIES_CODE, SHELL_CONDITION, EGG_COLOR, EGG_CONDITION, CLUTCH_SIZE) %>%
-      dplyr::reframe(COUNT = sum(SAMPLING_FACTOR),
-                     N = n()) %>%
-      as.data.frame()
+               filter(SEX == 2) %>%
+               group_by(SPECIES_CODE, SHELL_CONDITION, EGG_COLOR, EGG_CONDITION, CLUTCH_SIZE) %>%
+               reframe(COUNT = sum(SAMPLING_FACTOR),
+                       N = n()) %>%
+               as.data.frame()
     print(invent4)
   
   
@@ -176,9 +176,9 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
   # 15) Minimum and maximum lengths by sex?
     print("What are the minimum and maximum lengths reported by sex?")
     A15 <- specimen_table %>%
-           dplyr::group_by(SPECIES_CODE, SEX) %>%
-           dplyr::reframe(MIN_LENGTH = min(LENGTH),
-                          MAX_LENGTH = max(LENGTH)) %>%
+           group_by(SPECIES_CODE, SEX) %>%
+           reframe(MIN_LENGTH = min(LENGTH),
+                   MAX_LENGTH = max(LENGTH)) %>%
            as.data.frame()
     print(A15)
   
@@ -223,9 +223,9 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
   # 20) What is the maximum sampling factor by by sex?
     print("What is the maximum sampling factor by sex?")
     A20 <- specimen_table %>%
-           dplyr::group_by(SPECIES_CODE, SEX) %>%
-           dplyr::reframe(MIN_SAMPLING_FACTOR = min(SAMPLING_FACTOR),
-                          MAX_SAMPLING_FACTOR= max(SAMPLING_FACTOR)) %>%
+           group_by(SPECIES_CODE, SEX) %>%
+           reframe(MIN_SAMPLING_FACTOR = min(SAMPLING_FACTOR),
+                   MAX_SAMPLING_FACTOR= max(SAMPLING_FACTOR)) %>%
            as.data.frame() 
     print(A20)
   
@@ -239,12 +239,12 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
   print("CHECKING HAUL, STATION, AND BUOY IDs...")
     if(method == "POT"){
       xx <- cpue %>%
-            dplyr::select(VESSEL, SPN, POT_ID, BUOY, LAT_DD, LON_DD) %>%
+            select(VESSEL, SPN, POT_ID, BUOY, LAT_DD, LON_DD) %>%
             distinct() %>%
             as.data.frame()
       
       yy <- potlifts %>%
-            dplyr::select(VESSEL, SPN, POT_ID, BUOY, LAT_DD, LON_DD) %>%
+            select(VESSEL, SPN, POT_ID, BUOY, LAT_DD, LON_DD) %>%
             distinct()
       
       if(TRUE %in% is.na(suppressMessages(right_join(xx, yy, keep = TRUE))) == TRUE){
@@ -254,12 +254,12 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
       
       if(method == "TRAWL"){
         xx <- cpue %>%
-              dplyr::select(VESSEL, HAUL, STATION, LAT_DD, LON_DD) %>%
+              select(VESSEL, HAUL, STATION, LAT_DD, LON_DD) %>%
               distinct() %>%
               as.data.frame()
         
         yy <- haul %>%
-              dplyr::select(STATION, LAT_DD, LON_DD) %>%
+              select(STATION, LAT_DD, LON_DD) %>%
               distinct()
         
         if(TRUE %in% is.na(suppressMessages(right_join(xx, yy, keep = TRUE))) == TRUE){
@@ -273,12 +273,12 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
   # 22) Does the number of crab and number of entries match between the specimen table and catch summary?
     if(method == "POT"){
       spec_sum <- specimen_table %>%
-                  dplyr::group_by(CRUISE, VESSEL, POT_ID, SPECIES_CODE) %>%
-                  dplyr::reframe(NUMBER_CRAB = sum(SAMPLING_FACTOR),
-                                 N_ENTRIES = n())
+                  group_by(CRUISE, VESSEL, POT_ID, SPECIES_CODE) %>%
+                  reframe(NUMBER_CRAB = sum(SAMPLING_FACTOR),
+                          N_ENTRIES = n())
       
       catch_sum <- catch_summary %>%
-                   dplyr::select(CRUISE, VESSEL, POT_ID, SPECIES_CODE, NUMBER_CRAB, N_ENTRIES)
+                   select(CRUISE, VESSEL, POT_ID, SPECIES_CODE, NUMBER_CRAB, N_ENTRIES)
       
       if(TRUE %in% is.na(suppressMessages(right_join(spec_sum, catch_sum))) == TRUE){
         print("ERROR: POT: number of crab and number of entries do not 
@@ -288,12 +288,12 @@ error_chk <- function(method, specimen_table, catch_summary, potlifts, haul, cpu
 
     if(method == "TRAWL"){
       spec_sum <- specimen_table %>%
-        dplyr::group_by(CRUISE, VESSEL, HAUL, SPECIES_CODE) %>%
-        dplyr::reframe(NUMBER_CRAB = sum(SAMPLING_FACTOR),
-                       N_ENTRIES = n())
+                  group_by(CRUISE, VESSEL, HAUL, SPECIES_CODE) %>%
+                  reframe(NUMBER_CRAB = sum(SAMPLING_FACTOR),
+                          N_ENTRIES = n())
       
       catch_sum <- catch_summary %>%
-        dplyr::select(CRUISE, VESSEL, HAUL, SPECIES_CODE, NUMBER_CRAB, N_ENTRIES)
+                   select(CRUISE, VESSEL, HAUL, SPECIES_CODE, NUMBER_CRAB, N_ENTRIES)
       
       if(TRUE %in% is.na(suppressMessages(right_join(spec_sum, catch_sum))) == TRUE){
         print("ERROR: TRAWL: number of crab and number of entries do not 

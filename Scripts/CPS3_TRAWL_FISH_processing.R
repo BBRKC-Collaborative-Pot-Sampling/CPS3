@@ -16,7 +16,7 @@
 # LOAD FISH DATA -----------------------------------------------------------------------------------------------------------------
 
   # Set trawl data filepath
-      path <- "Y:/KOD_Survey/CPS3/Trawl Data/Groundfish/" 
+      path <- "Y:/KOD_Survey/CPS/CPS3/Trawl Data/Groundfish/" 
 
   # Load summary catch tables to get full species list
       # basically just using 'catch' files to assign species code because there aren't
@@ -24,7 +24,7 @@
       # this doesn't work for any batch processing...
       catch <- list.files(paste0(path, "Catch - FTP/")) %>%
                purrr::map_df(~read.csv(paste0(path, "Catch - FTP/", .x))) %>%
-               dplyr::select(SPECIES_CODE, SPECIES_NAME) %>%
+               select(SPECIES_CODE, SPECIES_NAME) %>%
                distinct()
 
   # Load raw data for processing below
@@ -40,8 +40,8 @@
       
       
   # Read in haul data
-      hauls <- read.csv("Y:/KOD_Survey/CPS2/Trawl Data/VA_HAULS.csv") %>% # Vesteraalen
-               dplyr::filter(SAMPLED == 1)
+      hauls <- read.csv("Y:/KOD_Survey/CPS3/Trawl Data/VA_HAULS.csv") %>% # Vesteraalen
+               filter(SAMPLED == 1)
 
 
 # PROCESS FISH DATA ----------------------------------------------------------------------------------------------------------------
@@ -56,7 +56,7 @@
                                   by = c("CATCH_SAMPLE_ID", "RECORDING_DEVICE", "RECORDER")) %>%
                         left_join(., raw_haul %>% select(HAUL_ID, CRUISE_ID, HAUL, STATION, RECORDING_DEVICE)) %>%
                         # remove crab from samples
-                        dplyr::filter(!SPECIES_CODE %in% c(68560, 69322, 69400)) %>%
+                        filter(!SPECIES_CODE %in% c(68560, 69322, 69400)) %>%
                         # join with catch to get species names
                         left_join(., catch) %>%  
                         # rename "Pacific cod (adult)" --> "Pacific cod"
@@ -77,7 +77,7 @@
                                SAMPLING_FACTOR = ifelse(!SPECIES_CODE %in% c(10210, 10220, 10261, 10285, 10110, 10130,
                                                                              10211, 10112, 10270, 10200), 1, SAMPLING_FACTOR)) %>%
                         # remove unidentified flatfish bin
-                        dplyr::filter(!SPECIES_CODE == 10001) %>% 
+                        filter(!SPECIES_CODE == 10001) %>% 
                         select(-IDENT, -UNIDENT, -FLATFISH) %>%
                         # expand basket count to rest of sample
                         mutate(IND_WEIGHT_CALC = SAMPLE_VALUE_WEIGHT/SAMPLE_VALUE_COUNT) %>%
@@ -103,7 +103,7 @@
                                   COUNT = sum(COUNT)) %>%
                         left_join(., hauls %>% select(STATION, LAT_DD, LON_DD)) %>%
                         mutate(VESSEL = "Vesteraalen", 
-                               CRUISE = 202301) %>%
+                               CRUISE = 202401) %>%
                         mutate(CALC_WEIGHT = WEIGHT*SAMPLING_FACTOR, 
                                CALC_COUNT = COUNT*SAMPLING_FACTOR) %>%
                         ungroup() %>%
@@ -113,38 +113,38 @@
 
         
     # Save .csv
-        write.csv(specimen_table, "./Data/CPS2_2024_trawl_fishcatch.csv", row.names = FALSE)
+        write.csv(specimen_table, "./Data/CPS3_2026_trawl_fishcatch.csv", row.names = FALSE)
       
         
     # Reframe and aggregate calculated weights by main bycatch species (to match POT bycatch dataframe)
         fish_sum <- specimen_table %>%
                     # remove non-fish taxa
                     filter(!SPECIES_NAME %in% c("Octopus sp.", "octopus unid.", "Hanasaki king crab, Male, All Sizes")) %>%
-                    dplyr::mutate(SPP_LABS = dplyr::case_when(SPECIES_NAME == "Pacific cod" ~ "PacificCod",
-                                                              SPECIES_NAME == "Pacific halibut" ~ "Halibut",
-                                                              SPECIES_NAME == "great sculpin" ~ "GreatSculpin", 
-                                                              SPECIES_NAME == "yellowfin sole" ~ "YellowfinSole", 
-                                                              SPECIES_NAME == "walleye pollock" ~ "Pollock", 
-                                                              SPECIES_NAME == "starry flounder" ~ "StarryFlounder", 
-                                                              SPECIES_NAME == "northern rock sole" ~ "RockSole",
-                                                              TRUE ~ "Other")) %>%
-                    dplyr::group_by(VESSEL, STATION, LAT_DD, LON_DD, SPP_LABS) %>%
-                    dplyr::summarise(WEIGHT = sum(CALC_WEIGHT),
-                                     COUNT = sum(CALC_COUNT))
+                    mutate(SPP_LABS = case_when(SPECIES_NAME == "Pacific cod" ~ "PacificCod",
+                                                SPECIES_NAME == "Pacific halibut" ~ "Halibut",
+                                                SPECIES_NAME == "great sculpin" ~ "GreatSculpin", 
+                                                SPECIES_NAME == "yellowfin sole" ~ "YellowfinSole", 
+                                                SPECIES_NAME == "walleye pollock" ~ "Pollock", 
+                                                SPECIES_NAME == "starry flounder" ~ "StarryFlounder", 
+                                                SPECIES_NAME == "northern rock sole" ~ "RockSole",
+                                                TRUE ~ "Other")) %>%
+                    group_by(VESSEL, STATION, LAT_DD, LON_DD, SPP_LABS) %>%
+                    summarise(WEIGHT = sum(CALC_WEIGHT),
+                              COUNT = sum(CALC_COUNT))
         
-        write.csv(fish_sum, "./Data/CPS2_2024_trawl_fish_station_weightcount.csv", row.names = FALSE)
+        write.csv(fish_sum, "./Data/CPS3_2026_trawl_fish_station_weightcount.csv", row.names = FALSE)
         
         bycatch_spp <- unique(fish_sum$SPP_LABS)
         
         fish_sum %>%
-          dplyr::right_join(expand_grid(SPP_LABS = bycatch_spp,
-                                        hauls)) %>%
+          right_join(expand_grid(SPP_LABS = bycatch_spp,
+                                 hauls)) %>%
           replace_na(list(WEIGHT = 0, VESSEL = "Vesteraalen")) %>%
-          dplyr::select(VESSEL, STATION, LAT_DD, LON_DD, SPP_LABS, WEIGHT) %>%
-          pivot_wider(., id_cols = c(VESSEL, STATION, LAT_DD, LON_DD,),
+          select(VESSEL, STATION, LAT_DD, LON_DD, SPP_LABS, WEIGHT) %>%
+          pivot_wider(., id_cols = c(VESSEL, STATION, LAT_DD, LON_DD),
                       names_from = "SPP_LABS", values_from = "WEIGHT") %>%
           select(VESSEL, STATION, LAT_DD, LON_DD, PacificCod, Halibut, 
                  GreatSculpin, YellowfinSole, Pollock, StarryFlounder, RockSole, Other) %>%
-          write.csv("./Data/CPS2_2024_trawl_fish_bycatch.csv", row.names = FALSE)
+          write.csv("./Data/CPS3_2026_trawl_fish_bycatch.csv", row.names = FALSE)
       
   
